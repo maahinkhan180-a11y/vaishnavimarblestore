@@ -1,5 +1,14 @@
 import mysql from 'mysql2/promise';
 
+function readBooleanSetting(name, defaultValue) {
+  const value = process.env[name];
+  if (value === undefined) return defaultValue;
+
+  if (value.toLowerCase() === 'true') return true;
+  if (value.toLowerCase() === 'false') return false;
+  throw new Error(`${name} must be "true" or "false"`);
+}
+
 const requiredDatabaseSettings = ['DB_HOST', 'DB_NAME', 'DB_USER'];
 const missingSettings = requiredDatabaseSettings.filter(name => !process.env[name]);
 
@@ -10,6 +19,9 @@ if (process.env.DB_PASSWORD === undefined) {
 if (missingSettings.length) {
   throw new Error(`Missing required database settings: ${missingSettings.join(', ')}`);
 }
+
+const useSsl = readBooleanSetting('DB_SSL', false);
+const rejectUnauthorized = readBooleanSetting('DB_SSL_REJECT_UNAUTHORIZED', true);
 
 export const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -22,4 +34,5 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   charset: 'utf8mb4',
   decimalNumbers: true,
+  ...(useSsl ? { ssl: { rejectUnauthorized } } : {}),
 });

@@ -10,9 +10,10 @@ import catalogRoutes from './routes/catalog.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import { requireAdmin } from './middleware/auth.js';
 import { uploadDir } from './middleware/upload.js';
+import { migrateDatabase } from './scripts/migrate.js';
 
 const app = express();
-const origins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+const origins = (process.env.CLIENT_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
@@ -53,10 +54,14 @@ app.use((error, req, res, next) => {
   return res.status(status).json({ error: status >= 500 ? 'Internal server error' : error.message });
 });
 
-const port = Number(process.env.PORT || 3000);
-const server = app.listen(port, () => console.log(`Vaishnavi Marble API listening on port ${port}`));
+let server;
 
 async function shutdown() {
+  if (!server) {
+    await pool.end();
+    return;
+  }
+
   server.close(async () => {
     await pool.end();
     process.exit(0);
@@ -65,3 +70,22 @@ async function shutdown() {
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+
+async function startServer() {
+  const autoMigrate = process.env.AUTO_MIGRATE;
+  if (autoMigrate !== undefined && !['true', 'false'].includes(autoMigrate.toLowerCase())) {
+    throw new Error('AUTO_MIGRATE must be "true" or "false"');
+  }
+  if (autoMigrate?.toLowerCase() === 'true') {
+    await migrateDatabase();
+  }
+
+  const port = Number(process.env.PORT || 3000);
+  server = app.listen(port, () => console.log(`Vaishnavi Marble API listening on port ${port}`));
+}
+
+startServer().catch(async error => {
+  console.error('Failed to start Vaishnavi Marble API:', error);
+  await pool.end();
+  process.exitCode = 1;
+});
