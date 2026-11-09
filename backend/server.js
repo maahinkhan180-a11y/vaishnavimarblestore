@@ -1,4 +1,6 @@
 import './config/loadEnv.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -13,6 +15,9 @@ import { uploadDir } from './middleware/upload.js';
 import { migrateDatabase } from './scripts/migrate.js';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDist = path.resolve(__dirname, '../frontend/dist');
 const origins = (process.env.CLIENT_ORIGIN || process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map(origin => origin.trim())
@@ -42,6 +47,16 @@ app.use('/api/uploads', requireAdmin, uploadRoutes);
 app.use('/api', catalogRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/admin', adminRoutes);
+
+app.use(express.static(frontendDist));
+app.get('*', (req, res, next) => {
+  if (req.path === '/api' || req.path.startsWith('/api/')) {
+    return next();
+  }
+  return res.sendFile(path.join(frontendDist, 'index.html'), error => {
+    if (error) next(error);
+  });
+});
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((error, req, res, next) => {
