@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "build": "npm install --prefix ../frontend && npm run build --prefix ../frontend",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seedAdmin.js"
   },
@@ -20,7 +21,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.5.0",
+    "multer": "^2.0.0",
     "mysql2": "^3.12.0"
   }
 }
