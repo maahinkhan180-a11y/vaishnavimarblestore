@@ -1,0 +1,11 @@
+{
+  "name": "vaishnavimarblestore",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm --prefix frontend run build"
+  }
+}
