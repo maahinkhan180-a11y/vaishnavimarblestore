@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /checkout/
+Content-Signal: search=yes
+Sitemap: https://vaishnavimarble.com/sitemap.xml
